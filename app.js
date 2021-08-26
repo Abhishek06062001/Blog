@@ -5,6 +5,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 require('./config/dbConnect')();
+const bcrypt = require('bcrypt')
+const saltrounds = 10
 const Post = require('./models/Post')
 const User = require('./models/User')
 const _ = require('lodash')
@@ -34,23 +36,27 @@ app.get('/register',function(req,res){
 })
 
 app.post('/register',function(req,res){
-  const user = new User ({
 
-    email: req.body.username,
-  
-    password: req.body.password
-  
-  });
-  
-  user.save(function(err){
+  bcrypt.hash(req.body.password,saltrounds,function(err,hash){
+    const user = new User ({
 
-    if (!err){
+      email: req.body.username,
+    
+      password: hash,
+    
+    });
+    
+    user.save(function(err){
   
-      res.redirect("/home");
-  
-    }
-  
+      if (!err){
+    
+        res.redirect("/home");
+    
+      }
+    
+    })
   })
+  
 
 })
 
@@ -63,9 +69,13 @@ app.post('/login',function(req,res){
       res.redirect('/')
     }else{
       if(foundUser){
-        if(foundUser.password === password){
+       bcrypt.compare(password,foundUser.password,function(err,result){
+         if(result===true){
           res.redirect('/home')
-        }
+         }
+       })
+          
+        
       }
     }
   })
